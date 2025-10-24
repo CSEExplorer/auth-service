@@ -1,6 +1,6 @@
 package com.bookify.auth_service.authn.user.service;
 
-import com.bookify.auth_service.authn.exception.CustomAuthException;
+import com.bookify.auth_service.authn.exception.basic.CustomAuthException;
 import com.bookify.auth_service.authn.user.dto.BasicAuthResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -61,7 +61,12 @@ public class BasicAuthService {
             );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            System.out.println("Principal: " + auth.getPrincipal());
+            System.out.println("Authorities: " + auth.getAuthorities());
+            System.out.println("Credentials: " + auth.getCredentials());
+            System.out.println("Details: " + auth.getDetails());
+            System.out.println("Authenticated: " + auth.isAuthenticated());
             // Generate a mock token (replace later with JWT)
             String token = UUID.randomUUID().toString();
 

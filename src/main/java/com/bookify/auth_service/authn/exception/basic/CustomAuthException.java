@@ -1,4 +1,4 @@
-package com.bookify.auth_service.authn.exception;
+package com.bookify.auth_service.authn.exception.basic;
 
 
 

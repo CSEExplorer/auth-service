@@ -1,6 +1,7 @@
 package com.bookify.auth_service.authn.exception;
 
 
+import com.bookify.auth_service.authn.exception.basic.CustomAuthException;
 import com.bookify.auth_service.authn.user.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
