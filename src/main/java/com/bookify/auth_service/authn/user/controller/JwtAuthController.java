@@ -130,7 +130,7 @@ public class JwtAuthController {
         // 1️⃣ Extract username and jti
         String username = jwtService.extractUsername(token);
         String jti = jwtService.extractJti(token);
-
+        System.out.println("Decoded username from token = " + username);
         // 2️⃣ Find user
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new JwtTokenInvalidException("User not found"));

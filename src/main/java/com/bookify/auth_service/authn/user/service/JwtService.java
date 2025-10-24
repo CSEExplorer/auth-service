@@ -24,6 +24,7 @@ public class JwtService {
     private static final PasswordEncoder REFRESH_TOKEN_ENCODER = new BCryptPasswordEncoder();
     private final RefreshTokenRepository refreshTokenRepository;
 
+
     private final KeyPair keyPair;
 
 

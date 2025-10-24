@@ -18,24 +18,16 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        // Check if the input looks like an email
         boolean isEmail = usernameOrEmail.contains("@");
 
-        User user;
+        User user = isEmail
+                ? basicUserRepository.findByEmail(usernameOrEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User with email " + usernameOrEmail + " not found"))
+                : basicUserRepository.findByUsername(usernameOrEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User with username " + usernameOrEmail + " not found"));
 
-        if (isEmail) {
-            user = basicUserRepository.findByEmail(usernameOrEmail)
-                    .orElseThrow(() -> new UsernameNotFoundException("User with email " + usernameOrEmail + " not found"));
-        } else {
-            user = basicUserRepository.findByUsername(usernameOrEmail)
-                    .orElseThrow(() -> new UsernameNotFoundException("User with username " + usernameOrEmail + " not found"));
-        }
-
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())      // username for Spring Security
-                .password(user.getPasswordHash())  // hashed password
-                .roles("USER")                     // role(s)
-                .build();
+        return new CustomUserDetails(user);
     }
+
 
 }

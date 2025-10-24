@@ -5,39 +5,34 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 
-public class CustomUserDetails implements UserDetails {
 
-    private String email;
-    private String password;
-    private boolean active;
+import com.bookify.auth_service.authn.user.entity.User;
 
-    public CustomUserDetails(String email, String password, boolean active) {
-        this.email = email;
-        this.password = password;
-        this.active = active;
-    }
+import java.util.Collections;
 
+
+public record CustomUserDetails(User user) implements UserDetails {
 
     @Override
-    public String getUsername() {
-        // You can return email here if you want email to act as username
-        return email;
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Example: return user roles in future if needed
+        return Collections.emptyList();
     }
 
     @Override
     public String getPassword() {
-        return password;
+        return user.getPasswordHash();
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null; // or return roles if you have any
+    public String getUsername() {
+        // ✅ Use email as the primary username for Spring Security
+        return user.getEmail();
     }
-
 
 
     @Override
     public boolean isEnabled() {
-        return active;
+        return user.getIsActive();
     }
 }
