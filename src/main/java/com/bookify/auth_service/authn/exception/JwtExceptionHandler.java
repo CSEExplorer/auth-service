@@ -8,6 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+
 @RestControllerAdvice
 public class JwtExceptionHandler {
 
@@ -54,6 +58,30 @@ public class JwtExceptionHandler {
     public ResponseEntity<String> handleInvalidJwt(Exception ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid JWT token");
     }
+
+    @ExceptionHandler(JwtTokenExpiredException.class)
+    public ResponseEntity<Map<String, Object>> handleExpiredToken(JwtTokenExpiredException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", HttpStatus.UNAUTHORIZED.value());
+        body.put("error", "Unauthorized");
+        body.put("message", "Access token expired");
+        body.put("details", "Please refresh your token or login again.");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    @ExceptionHandler(JwtTokenRevokedException.class)
+    public ResponseEntity<Map<String, Object>> handleRevokedToken(JwtTokenRevokedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", HttpStatus.UNAUTHORIZED.value());
+        body.put("error", "Unauthorized");
+        body.put("message", ex.getMessage());
+        body.put("details", "Your access token has been revoked. Please login again.");
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
 
 
 }
