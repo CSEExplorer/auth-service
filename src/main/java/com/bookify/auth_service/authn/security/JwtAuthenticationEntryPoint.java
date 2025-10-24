@@ -12,46 +12,54 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.security.SignatureException;
+import jakarta.servlet.ServletException;
+
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @Override
-    public void commence(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException authException
-    ) throws IOException {
+    public void commence(HttpServletRequest request,
+                         HttpServletResponse response,
+                         AuthenticationException authException) throws IOException, ServletException {
 
         response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        int status = HttpServletResponse.SC_UNAUTHORIZED; // 401
-        String message = "Unauthorized";
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", HttpServletResponse.SC_UNAUTHORIZED);
 
-        // Customize message based on the exception
-        Throwable cause = authException.getCause();
-        if (cause instanceof JwtTokenExpiredException) {
-            message = cause.getMessage(); // "Token has expired"
-        } else if (cause instanceof JwtTokenRevokedException) {
-            message = cause.getMessage(); // "Token has been revoked"
-        } else if (cause instanceof JwtTokenInvalidException) {
-            message = cause.getMessage(); // "Invalid token"
-        } else {
-            message = authException.getMessage();
+        // Traverse cause to find the actual custom exception
+        Throwable cause = authException;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
         }
 
-        String json = String.format(
-                "{\"timestamp\":\"%s\",\"status\":%d,\"error\":\"Unauthorized\",\"message\":\"%s\",\"path\":\"%s\"}",
-                Instant.now().toString(),
-                status,
-                message,
-                request.getRequestURI()
-        );
+        if (cause instanceof JwtTokenExpiredException) {
+            body.put("error", "TokenExpired");
+            body.put("message", cause.getMessage());
+        } else if (cause instanceof JwtTokenRevokedException) {
+            body.put("error", "TokenRevoked");
+            body.put("message", cause.getMessage());
+        } else if (cause instanceof JwtTokenInvalidException) {
+            body.put("error", "TokenInvalid");
+            body.put("message", cause.getMessage());
+        } else if (cause instanceof io.jsonwebtoken.security.SignatureException) {
+            body.put("error", "SignatureMismatch");
+            body.put("message", "JWT signature does not match. Token may be invalid or server restarted with a new key pair.");
+        } else {
+            body.put("error", "Unauthorized");
+            body.put("message", authException.getMessage());
+        }
 
-        response.setStatus(status);
-        response.getWriter().write(json);
+        response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 }
-

@@ -45,42 +45,7 @@ public class JwtExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
-    // ===== 4. JWT expired =====
-    @ExceptionHandler(io.jsonwebtoken.ExpiredJwtException.class)
-    public ResponseEntity<String> handleExpiredJwt(io.jsonwebtoken.ExpiredJwtException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body("Token expired, please refresh");
-    }
-    @ExceptionHandler({
-            io.jsonwebtoken.MalformedJwtException.class,
-            IllegalArgumentException.class
-    })
-    public ResponseEntity<String> handleInvalidJwt(Exception ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid JWT token");
-    }
 
-    @ExceptionHandler(JwtTokenExpiredException.class)
-    public ResponseEntity<Map<String, Object>> handleExpiredToken(JwtTokenExpiredException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", Instant.now().toString());
-        body.put("status", HttpStatus.UNAUTHORIZED.value());
-        body.put("error", "Unauthorized");
-        body.put("message", "Access token expired");
-        body.put("details", "Please refresh your token or login again.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
-    }
-
-    @ExceptionHandler(JwtTokenRevokedException.class)
-    public ResponseEntity<Map<String, Object>> handleRevokedToken(JwtTokenRevokedException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", Instant.now().toString());
-        body.put("status", HttpStatus.UNAUTHORIZED.value());
-        body.put("error", "Unauthorized");
-        body.put("message", ex.getMessage());
-        body.put("details", "Your access token has been revoked. Please login again.");
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
-    }
 
 
 

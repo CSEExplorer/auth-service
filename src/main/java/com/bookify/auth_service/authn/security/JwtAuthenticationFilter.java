@@ -1,10 +1,13 @@
 package com.bookify.auth_service.authn.security;
 
+import com.bookify.auth_service.authn.exception.jwt.JwtTokenInvalidException;
 import com.bookify.auth_service.authn.user.service.JwtService;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,7 +56,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String jwt = authHeader.substring(7);
-        final String username = jwtService.extractUsername(jwt);
+
+        final String username;
+        try {
+            username = jwtService.extractUsername(jwt); // may throw SignatureException
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            SecurityContextHolder.clearContext();
+            authenticationEntryPoint.commence(request, response,
+                    new AuthenticationServiceException("New KeyPair mismatch",
+                            new io.jsonwebtoken.security.SignatureException("Signature Mismatch ! mayBe new KeyPair")));
+            return;
+        }
         final String jti = jwtService.extractJti(jwt);
         System.out.println(username);
         System.out.println(jwt);
@@ -64,12 +77,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 1️⃣ Check if token is blacklisted (revoked)
                 if (tokenBlacklistService.isBlacklisted(jti)) {
-                    throw new JwtTokenRevokedException("Token has been revoked");
+                    authenticationEntryPoint.commence(request, response,
+                            new AuthenticationServiceException("Token revoked",
+                                    new JwtTokenRevokedException("Token has been revoked")));
+                    return;
                 }
 
-                // 2️⃣ Validate token (also checks expiration)
+                // Check if token is valid
                 if (!jwtService.isTokenValid(jwt, username)) {
-                    throw new JwtTokenExpiredException("Token has expired");
+                    authenticationEntryPoint.commence(request, response,
+                            new AuthenticationServiceException("Token expired/invalid",
+                                    new JwtTokenExpiredException("Token has expired")));
+                    return;
                 }
 
                 // 3️⃣ Load user details and set authentication
@@ -81,11 +100,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
 
-        } catch (JwtTokenExpiredException | JwtTokenRevokedException e) {
-            // Clear security context and propagate exception
+        }  catch (Exception e) {
             SecurityContextHolder.clearContext();
-            authenticationEntryPoint.commence(request, response, new org.springframework.security.core.AuthenticationException(e.getMessage()) {});
-            return ;  // will be handled by your SecurityFilterChain entry point
+            authenticationEntryPoint.commence(request, response,
+                    new AuthenticationServiceException("JWT processing error", e));
+            return;
         }
 
         filterChain.doFilter(request, response);
