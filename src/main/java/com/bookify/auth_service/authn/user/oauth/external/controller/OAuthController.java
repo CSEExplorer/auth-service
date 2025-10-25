@@ -29,7 +29,10 @@ public class OAuthController {
                 "?client_id=" + clientId +
                 "&redirect_uri=" + encodedRedirectUri +
                 "&response_type=code" +
-                "&scope=" + encodedScope;
+                "&scope=" + encodedScope +
+                "&access_type=offline" +
+                "&prompt=consent";
+
 
         return ResponseEntity.status(302).location(URI.create(authUrl)).build();
     }

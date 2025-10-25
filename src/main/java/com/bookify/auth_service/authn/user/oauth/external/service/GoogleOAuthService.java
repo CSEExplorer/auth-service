@@ -23,6 +23,7 @@ import org.springframework.http.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class GoogleOAuthService {
@@ -58,17 +59,29 @@ public class GoogleOAuthService {
 
         // 2️⃣ Get user info from Google
         GoogleUserInfo googleUser = decodeIdToken(idToken);
+//         3️⃣ Load or create user in your DB
+        Optional<User> existingUserOpt = userRepository.findByEmail(googleUser.email());
 
-        // 3️⃣ Load or create user in your DB
-        User user = userRepository.findByEmail(googleUser.email())
-                .orElseGet(() -> userRepository.save(
-                        User.builder()
-                                .username(googleUser.name())
-                                .email(googleUser.email())
-                                .passwordHash("")
-                                .isActive(true)
-                                .build()
-                ));
+        User user;
+        if (existingUserOpt.isPresent()) {
+            // Duplicate user found
+            user = existingUserOpt.get();
+            // You can handle duplicate logic here, e.g., return a message or update refresh token
+            System.out.println("User already exists: " + user.getEmail());
+        } else {
+            // New user → save to DB
+            user = userRepository.save(
+                    User.builder()
+                            .username(googleUser.name())
+                            .email(googleUser.email())
+                            .passwordHash("") // empty for OAuth user
+                            .isActive(true)
+                            .build()
+            );
+            System.out.println("New user created: " + user.getEmail());
+        }
+
+
 
         this.userEmail = user.getEmail();
         System.out.println("Email"+userEmail);
@@ -78,6 +91,11 @@ public class GoogleOAuthService {
 //        List<String> roles = List.of("ROLE_USER");
 
         // 4️⃣ Generate JWT for your app
+        // this method saves refresh token as well as stores it also
+
+         String jwtRefreshToken = jwtService.generateRefreshToken(user);
+         System.out.println("Save the refresh token because it will be hashed");
+         System.out.println(jwtRefreshToken);
         return jwtService.generateAccessToken(userDetails,null,null,null);
     }
 
@@ -119,6 +137,7 @@ public class GoogleOAuthService {
             Map<String, String> tokens = new HashMap<>();
             tokens.put("access_token", (String) response.getBody().get("access_token"));
             tokens.put("id_token", (String) response.getBody().get("id_token"));
+
             return tokens;
         }
 
