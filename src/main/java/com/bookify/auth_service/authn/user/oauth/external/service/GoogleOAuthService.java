@@ -1,10 +1,17 @@
 package com.bookify.auth_service.authn.user.oauth.external.service;
 
 
+import com.auth0.jwt.interfaces.Claim;
 import com.bookify.auth_service.authn.security.CustomUserDetails;
 import com.bookify.auth_service.authn.user.jwt.entity.User;
 import com.bookify.auth_service.authn.user.jwt.repository.BasicUserRepository;
 import com.bookify.auth_service.authn.user.jwt.service.JwtService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.auth0.jwt.JWT;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -45,10 +52,12 @@ public class GoogleOAuthService {
 
     public String processOAuthCode(String code) {
         // 1️⃣ Exchange code for Google access token (simplified)
-        String accessToken = exchangeCodeForToken(code);
-        System.out.println("access token"+accessToken);
+        Map<String, String> googleTokens = exchangeCodeForToken(code);
+        String idToken = googleTokens.get("id_token");
+        String accessToken = googleTokens.get("access_token");
+
         // 2️⃣ Get user info from Google
-        GoogleUserInfo googleUser = fetchGoogleUserInfo(accessToken);
+        GoogleUserInfo googleUser = decodeIdToken(idToken);
 
         // 3️⃣ Load or create user in your DB
         User user = userRepository.findByEmail(googleUser.email())
@@ -72,7 +81,7 @@ public class GoogleOAuthService {
         return jwtService.generateAccessToken(userDetails,null,null,null);
     }
 
-    private String exchangeCodeForToken(String code) {
+    private Map<String, String> exchangeCodeForToken(String code) {
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -97,7 +106,20 @@ public class GoogleOAuthService {
         ResponseEntity<Map> response = restTemplate.postForEntity(TOKEN_URI, request, Map.class);
 
         if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-            return (String) response.getBody().get("access_token");
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.enable(SerializationFeature.INDENT_OUTPUT); // pretty-print
+                String json = mapper.writeValueAsString(response.getBody());
+                System.out.println("Full JSON response from Google:");
+                System.out.println(json);
+            } catch (JsonProcessingException e) {
+                System.err.println("Error converting Google response to JSON:");
+                e.printStackTrace();
+            }
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("access_token", (String) response.getBody().get("access_token"));
+            tokens.put("id_token", (String) response.getBody().get("id_token"));
+            return tokens;
         }
 
         throw new RuntimeException("Failed to exchange code for access token");
@@ -106,7 +128,7 @@ public class GoogleOAuthService {
 
     private GoogleUserInfo fetchGoogleUserInfo(String accessToken) {
 
-
+       // This is the method can be used later to fetch other resources form the google
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -131,6 +153,34 @@ public class GoogleOAuthService {
         }
 
         throw new RuntimeException("Failed to fetch user info from Google");
+    }
+
+    private GoogleUserInfo decodeIdToken(String idToken) {
+        DecodedJWT decodedJWT = JWT.decode(idToken);
+
+        Map<String, Claim> claims = decodedJWT.getClaims(); // all claims
+        Map<String, Object> result = new HashMap<>();
+
+        for (Map.Entry<String, Claim> entry : claims.entrySet()) {
+            String key = entry.getKey();
+            Claim claim = entry.getValue();
+
+            // Use as(Object.class) to get the raw value
+            Object value;
+            if (claim.as(Object.class) != null) {
+                value = claim.as(Object.class);
+            } else {
+                value = claim.toString();
+            }
+
+            result.put(key, value);
+        }
+
+        String email = decodedJWT.getClaim("email").asString();
+        String name = decodedJWT.getClaim("name").asString();
+        System.out.println("All Claims from id_token");
+        System.out.println(result);
+        return new GoogleUserInfo(name, email);
     }
 
 

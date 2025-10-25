@@ -37,8 +37,7 @@ public class GoogleOAuthFilter extends OncePerRequestFilter {
                 System.out.println(code);
                 // Process code using the service and get JWT
                 String jwt = googleOAuthService.processOAuthCode(code);
-//                System.out.println(jwt);
-                // Optionally, set Spring Security Authentication
+
                 User userDetails = new User(googleOAuthService.getUserEmail(), "", Collections.emptyList());
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
