@@ -1,6 +1,7 @@
 package com.bookify.auth_service.authn.security;
 
 
+import jakarta.servlet.Filter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -21,9 +22,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
+    private final  GoogleOAuthFilter googleOAuthFilter;
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,GoogleOAuthFilter googleOAuthFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.googleOAuthFilter = googleOAuthFilter;
     }
 
 
@@ -62,16 +65,32 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .build();
     }
+    @Bean
+    @Order(3)
+    public SecurityFilterChain oauthFilterChain(HttpSecurity http) throws Exception {
+
+        return http
+                .securityMatcher("/api/auth/oauth/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/oauth/login/google", "/api/auth/oauth/callback/google").permitAll()
+                        .anyRequest().authenticated()
+                )
+
+                .addFilterBefore(googleOAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
 
 
     @Bean
-    @Order(3)
+    @Order(4)
     public SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .build();
     }
+
 
 
     @Bean

@@ -1,7 +1,7 @@
 package com.bookify.auth_service.authn.security;
 
-import com.bookify.auth_service.authn.user.entity.User;
-import com.bookify.auth_service.authn.user.repository.BasicUserRepository;
+import com.bookify.auth_service.authn.user.jwt.entity.User;
+import com.bookify.auth_service.authn.user.jwt.repository.BasicUserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

@@ -1,10 +1,9 @@
-package com.bookify.auth_service.authn.user.entity;
+package com.bookify.auth_service.authn.user.jwt.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "refresh_tokens")

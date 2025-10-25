@@ -1,8 +1,8 @@
-package com.bookify.auth_service.authn.user.repository;
+package com.bookify.auth_service.authn.user.jwt.repository;
 
 
 
-import com.bookify.auth_service.authn.user.entity.User;
+import com.bookify.auth_service.authn.user.jwt.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

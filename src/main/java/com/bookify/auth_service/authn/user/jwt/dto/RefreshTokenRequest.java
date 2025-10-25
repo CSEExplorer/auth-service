@@ -1,4 +1,4 @@
-package com.bookify.auth_service.authn.user.dto;
+package com.bookify.auth_service.authn.user.jwt.dto;
 
 
 

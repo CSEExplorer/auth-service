@@ -1,9 +1,9 @@
-package com.bookify.auth_service.authn.user.service;
+package com.bookify.auth_service.authn.user.jwt.service;
 
 
-import com.bookify.auth_service.authn.user.entity.RefreshToken;
-import com.bookify.auth_service.authn.user.entity.User;
-import com.bookify.auth_service.authn.user.repository.RefreshTokenRepository;
+import com.bookify.auth_service.authn.user.jwt.entity.RefreshToken;
+import com.bookify.auth_service.authn.user.jwt.entity.User;
+import com.bookify.auth_service.authn.user.jwt.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 
 import org.springframework.security.core.userdetails.UserDetails;
@@ -236,8 +236,8 @@ public class JwtService {
 //
 //
 //import com.bookify.auth_service.authn.user.entity.JwtToken;
-//import com.bookify.auth_service.authn.user.entity.User;
-//import com.bookify.auth_service.authn.user.repository.BasicUserRepository;
+//import com.bookify.auth_service.authn.user.jwt.entity.User;
+//import com.bookify.auth_service.authn.user.jwt.repository.BasicUserRepository;
 //import com.bookify.auth_service.authn.user.repository.JwtTokenRepository;
 //import io.jsonwebtoken.*;
 //import io.jsonwebtoken.io.Decoders;

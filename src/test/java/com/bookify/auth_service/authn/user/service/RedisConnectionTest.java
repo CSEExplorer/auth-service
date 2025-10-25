@@ -1,7 +1,7 @@
 package com.bookify.auth_service.authn.user.service;
 
 
-import com.bookify.auth_service.authn.user.service.TokenBlacklistService;
+import com.bookify.auth_service.authn.user.jwt.service.TokenBlacklistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

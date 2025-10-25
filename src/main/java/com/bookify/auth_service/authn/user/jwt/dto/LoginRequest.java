@@ -1,16 +1,10 @@
-package com.bookify.auth_service.authn.user.dto;
+package com.bookify.auth_service.authn.user.jwt.dto;
 
 import com.bookify.auth_service.authn.validation.ValidPassword;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
 
 @Data
 public class LoginRequest {

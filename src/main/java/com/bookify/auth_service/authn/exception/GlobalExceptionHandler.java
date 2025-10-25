@@ -2,7 +2,8 @@ package com.bookify.auth_service.authn.exception;
 
 
 import com.bookify.auth_service.authn.exception.basic.CustomAuthException;
-import com.bookify.auth_service.authn.user.dto.ErrorResponse;
+import com.bookify.auth_service.authn.exception.oauth.OAuthException;
+import com.bookify.auth_service.authn.user.jwt.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,13 +14,22 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-
+    @ExceptionHandler(OAuthException.class)
+    public ResponseEntity<Map<String, Object>> handleOAuthException(OAuthException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now());
+        body.put("status", ex.getStatus());
+        body.put("error", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.valueOf(ex.getStatus()));
+    }
 
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

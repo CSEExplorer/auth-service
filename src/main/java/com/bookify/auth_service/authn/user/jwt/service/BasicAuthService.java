@@ -1,7 +1,7 @@
-package com.bookify.auth_service.authn.user.service;
+package com.bookify.auth_service.authn.user.jwt.service;
 
 import com.bookify.auth_service.authn.exception.basic.CustomAuthException;
-import com.bookify.auth_service.authn.user.dto.BasicAuthResponse;
+import com.bookify.auth_service.authn.user.jwt.dto.BasicAuthResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -10,10 +10,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.bookify.auth_service.authn.user.dto.LoginRequest;
-import com.bookify.auth_service.authn.user.dto.RegisterRequest;
-import com.bookify.auth_service.authn.user.entity.User;
-import com.bookify.auth_service.authn.user.repository.BasicUserRepository;
+import com.bookify.auth_service.authn.user.jwt.dto.LoginRequest;
+import com.bookify.auth_service.authn.user.jwt.dto.RegisterRequest;
+import com.bookify.auth_service.authn.user.jwt.entity.User;
+import com.bookify.auth_service.authn.user.jwt.repository.BasicUserRepository;
 import com.bookify.auth_service.authn.utility.PasswordEncoderUtil;
 
 import java.util.UUID;

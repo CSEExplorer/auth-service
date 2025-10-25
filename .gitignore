@@ -33,3 +33,4 @@ build/
 .vscode/
 
 ### Eclipse metadat files ####
+src/main/resources/application.properties

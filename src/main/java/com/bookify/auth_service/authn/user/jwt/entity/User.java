@@ -1,4 +1,4 @@
-package com.bookify.auth_service.authn.user.entity;
+package com.bookify.auth_service.authn.user.jwt.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

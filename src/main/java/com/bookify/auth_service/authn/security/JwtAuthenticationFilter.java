@@ -1,8 +1,6 @@
 package com.bookify.auth_service.authn.security;
 
-import com.bookify.auth_service.authn.exception.jwt.JwtTokenInvalidException;
-import com.bookify.auth_service.authn.user.service.JwtService;
-import io.jsonwebtoken.security.SignatureException;
+import com.bookify.auth_service.authn.user.jwt.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +20,7 @@ import java.io.IOException;
 import com.bookify.auth_service.authn.exception.jwt.JwtTokenExpiredException;
 import com.bookify.auth_service.authn.exception.jwt.JwtTokenRevokedException;
 
-import com.bookify.auth_service.authn.user.service.TokenBlacklistService;
+import com.bookify.auth_service.authn.user.jwt.service.TokenBlacklistService;
 
 
 @Component

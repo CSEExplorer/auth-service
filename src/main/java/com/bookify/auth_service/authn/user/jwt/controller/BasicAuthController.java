@@ -1,17 +1,16 @@
-package com.bookify.auth_service.authn.user.controller;
+package com.bookify.auth_service.authn.user.jwt.controller;
 
 
 
-import com.bookify.auth_service.authn.user.dto.BasicAuthResponse;
+import com.bookify.auth_service.authn.user.jwt.dto.BasicAuthResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.bookify.auth_service.authn.user.dto.LoginRequest;
-import com.bookify.auth_service.authn.user.dto.RegisterRequest;
-import com.bookify.auth_service.authn.user.service.BasicAuthService;
+import com.bookify.auth_service.authn.user.jwt.dto.LoginRequest;
+import com.bookify.auth_service.authn.user.jwt.dto.RegisterRequest;
+import com.bookify.auth_service.authn.user.jwt.service.BasicAuthService;
 
 @RestController
 @RequestMapping("/api/auth/basic")

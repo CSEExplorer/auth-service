@@ -6,7 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 
 
-import com.bookify.auth_service.authn.user.entity.User;
+import com.bookify.auth_service.authn.user.jwt.entity.User;
 
 import java.util.Collections;
 

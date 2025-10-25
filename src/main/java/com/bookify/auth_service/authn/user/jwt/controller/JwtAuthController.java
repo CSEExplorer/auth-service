@@ -1,4 +1,4 @@
-package com.bookify.auth_service.authn.user.controller;
+package com.bookify.auth_service.authn.user.jwt.controller;
 
 
 
@@ -8,15 +8,15 @@ import com.bookify.auth_service.authn.exception.jwt.InvalidCredentialsException;
 import com.bookify.auth_service.authn.exception.jwt.JwtTokenInvalidException;
 import com.bookify.auth_service.authn.exception.jwt.UsernameAlreadyExistsException;
 import com.bookify.auth_service.authn.security.CustomUserDetailsService;
-import com.bookify.auth_service.authn.user.dto.JwtAuthResponse;
-import com.bookify.auth_service.authn.user.dto.LoginRequest;
-import com.bookify.auth_service.authn.user.dto.RefreshTokenRequest;
-import com.bookify.auth_service.authn.user.dto.RegisterRequest;
-import com.bookify.auth_service.authn.user.entity.User;
-import com.bookify.auth_service.authn.user.repository.BasicUserRepository;
-import com.bookify.auth_service.authn.user.repository.RefreshTokenRepository;
-import com.bookify.auth_service.authn.user.service.JwtService;
-import com.bookify.auth_service.authn.user.service.TokenBlacklistService;
+import com.bookify.auth_service.authn.user.jwt.dto.JwtAuthResponse;
+import com.bookify.auth_service.authn.user.jwt.dto.LoginRequest;
+import com.bookify.auth_service.authn.user.jwt.dto.RefreshTokenRequest;
+import com.bookify.auth_service.authn.user.jwt.dto.RegisterRequest;
+import com.bookify.auth_service.authn.user.jwt.entity.User;
+import com.bookify.auth_service.authn.user.jwt.repository.BasicUserRepository;
+import com.bookify.auth_service.authn.user.jwt.repository.RefreshTokenRepository;
+import com.bookify.auth_service.authn.user.jwt.service.JwtService;
+import com.bookify.auth_service.authn.user.jwt.service.TokenBlacklistService;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
