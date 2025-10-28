@@ -36,6 +36,18 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(0)
+    public SecurityFilterChain adminApiSecurity(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/admin/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
+                .httpBasic(Customizer.withDefaults()) // simple for now
+                .build();
+    }
+
+
+    @Bean
     @Order(1)
     public SecurityFilterChain jwtAuthFilterChain(HttpSecurity http) throws Exception {
         return http

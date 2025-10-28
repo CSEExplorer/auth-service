@@ -30,8 +30,8 @@ public class OAuthController {
                 "&redirect_uri=" + encodedRedirectUri +
                 "&response_type=code" +
                 "&scope=" + encodedScope +
-                "&access_type=offline" +
-                "&prompt=consent";
+                "&access_type=offline" +    // request refresh token
+                "&prompt=consent";           // // force Google to give refresh token
 
 
         return ResponseEntity.status(302).location(URI.create(authUrl)).build();
