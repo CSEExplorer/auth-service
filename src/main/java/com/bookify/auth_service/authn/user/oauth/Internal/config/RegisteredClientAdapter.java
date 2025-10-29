@@ -36,6 +36,7 @@ public final class RegisteredClientAdapter {
         // If clientSecret already seems hashed (starts with $2a$ or $2b$ etc), we store as-is.
         // Otherwise assume it is plain and encode.
         String secret = entity.getClientSecret();
+        System.out.println("the client secret is "+secret);
         if (secret != null && (secret.startsWith("$2a$") || secret.startsWith("$2b$") || secret.startsWith("$2y$"))) {
             builder.clientSecret(secret);
         } else if (secret != null && passwordEncoder != null) {

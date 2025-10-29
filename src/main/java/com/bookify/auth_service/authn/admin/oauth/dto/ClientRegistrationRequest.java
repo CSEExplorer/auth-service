@@ -1,10 +1,12 @@
 package com.bookify.auth_service.authn.admin.oauth.dto;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,7 +33,8 @@ public class ClientRegistrationRequest {
     /**
      * Allowed redirect URIs for authorization code or implicit flows.
      */
-    private Set<String> redirectUris;
+    @NotEmpty(message = "redirectUris cannot be empty")
+    private Set<String> redirectUris = new HashSet<>();
 
     /**
      * Scopes allowed for this client (e.g., openid, profile, email).

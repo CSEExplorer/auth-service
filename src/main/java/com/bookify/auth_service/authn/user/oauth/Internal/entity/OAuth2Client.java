@@ -28,36 +28,25 @@ public class OAuth2Client {
     @Column(name = "client_name", nullable = false)
     private String clientName;
 
-    @Lob
+
     @Column(name = "redirect_uris", columnDefinition = "TEXT")
     private String redirectUris;  // JSON or comma-separated URIs
 
-    @Lob
+
     @Column(name = "grant_types", columnDefinition = "TEXT")
     private String grantTypes;    // JSON or comma-separated grant types
 
-    @Lob
+
     @Column(name = "scopes", columnDefinition = "TEXT")
     private String scopes;        // JSON or comma-separated scopes
 
     @Column(name = "client_auth_method", nullable = false)
     private String clientAuthMethod;
 
-    @Lob
+
     @Column(name = "token_settings", columnDefinition = "TEXT")
     private String tokenSettings; // JSON structure of token settings
 
-    // ✅ Optional: also store individual fields for easier query/filter
-    @Column(name = "access_token_ttl")
-    private Long accessTokenTimeToLive; // in seconds
-
-    @Column(name = "refresh_token_ttl")
-    private Long refreshTokenTimeToLive; // in seconds
-
-    @Column(name = "reuse_refresh_tokens")
-    private Boolean reuseRefreshTokens = true;
-
-    @Lob
     @Column(name = "jwks", columnDefinition = "TEXT")
     private String jwks;          // Optional JWKS for private_key_jwt clients
 

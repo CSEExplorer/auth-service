@@ -14,6 +14,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -35,26 +37,29 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
-    @Bean
-    @Order(0)
-    public SecurityFilterChain adminApiSecurity(HttpSecurity http) throws Exception {
-        return http
-                .securityMatcher("/admin/**")
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
-                .httpBasic(Customizer.withDefaults()) // simple for now
-                .build();
-    }
+//    @Bean
+//    @Order(0)
+//    public SecurityFilterChain adminApiSecurity(HttpSecurity http) throws Exception {
+//        return http
+//                .securityMatcher("/admin/**")
+//                .csrf(AbstractHttpConfigurer::disable)
+//                .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
+//                .httpBasic(Customizer.withDefaults()) // simple for now
+//                .build();
+//    }
 
 
     @Bean
     @Order(1)
     public SecurityFilterChain jwtAuthFilterChain(HttpSecurity http) throws Exception {
         return http
-                .securityMatcher("/api/auth/jwt/**")
+                .securityMatcher("/api/auth/jwt/**","/admin/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/jwt/register", "/api/auth/jwt/login", "/api/auth/jwt/refresh").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/super-admin/**").hasRole("SUPER_ADMIN")// 👈 restrict to admin
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -109,4 +114,18 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+//        The JwtAuthenticationConverter bean is only needed when you use:
+//Spring’s default OAuth2ResourceServer setup (http.oauth2ResourceServer(jwt -> …)),
+        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
+        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_"); // adds ROLE_ prefix automatically
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+        return converter;
+    }
+
 }

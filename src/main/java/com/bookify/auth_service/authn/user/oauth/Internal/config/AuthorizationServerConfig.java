@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -49,7 +50,10 @@ public class AuthorizationServerConfig {
                 ));
 
         // Add default login page for code flow testing
-        return http.formLogin(Customizer.withDefaults()).build();
+        http.formLogin(AbstractHttpConfigurer::disable);
+        return http.build();
+         // for the login page to enable
+//        return http.formLogin(Customizer.withDefaults()).build();
     }
 
 

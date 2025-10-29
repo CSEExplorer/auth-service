@@ -21,13 +21,18 @@ public class JwkEntity {
     @Column(nullable = false, unique = true)
     private String keyId;
 
-    @Lob
-    @Column(nullable = false)
-    private String publicKeyJson;  // JWK public key (for JWKS endpoint)
 
-    @Lob
-    @Column(nullable = false)
-    private String privateKeyJson; // Private JWK
+    @Basic(fetch = FetchType.EAGER)
+    @Column(name = "public_key_json", nullable = false, columnDefinition = "TEXT")
+    private String publicKeyJson;
+
+    @Basic(fetch = FetchType.EAGER)
+    @Column(name = "private_key_json", nullable = false, columnDefinition = "TEXT")
+    private String privateKeyJson;
+
+
+    private boolean retired;
+    private boolean revoked;
 
     @Column(nullable = false)
     private boolean active;  // Only one key active for signing

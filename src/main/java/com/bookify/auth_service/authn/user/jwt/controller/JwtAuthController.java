@@ -12,6 +12,7 @@ import com.bookify.auth_service.authn.user.jwt.dto.JwtAuthResponse;
 import com.bookify.auth_service.authn.user.jwt.dto.LoginRequest;
 import com.bookify.auth_service.authn.user.jwt.dto.RefreshTokenRequest;
 import com.bookify.auth_service.authn.user.jwt.dto.RegisterRequest;
+import com.bookify.auth_service.authn.user.jwt.entity.Role;
 import com.bookify.auth_service.authn.user.jwt.entity.User;
 import com.bookify.auth_service.authn.user.jwt.repository.BasicUserRepository;
 import com.bookify.auth_service.authn.user.jwt.repository.RefreshTokenRepository;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth/jwt")
@@ -70,11 +72,15 @@ public class JwtAuthController {
         }
 
         String hashedPassword = passwordEncoder.encode(request.getPassword());
+        Role role = Optional.ofNullable(request.getRole())
+                .map(Role::valueOf)
+                .orElse(Role.USER);
 
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
-                .passwordHash(hashedPassword) // Assuming User entity has 'password' field
+                .passwordHash(hashedPassword)
+                .role(role) // Assuming User entity has 'password' field
                 .isActive(true)
                 .build();
 
@@ -99,13 +105,14 @@ public class JwtAuthController {
             User user = userRepository.findByEmail(request.getUsernameOrEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
             List<String> scopes = List.of("read", "write"); // Replace with real scopes
-//            List<String> roles = user.getRoles() != null
-//                    ? user.getRoles().stream().map(r -> r.getName()).toList()
-//                    : List.of();
+            List<String> roles = user.getRole() != null
+                    ? List.of(user.getRole().name())
+                    : List.of();
+
 //            String deviceId = request.getDeviceId(); // optional field in LoginRequest
 
             // Generate tokens
-            String accessToken = jwtService.generateAccessToken(userDetails, scopes, null, null);
+            String accessToken = jwtService.generateAccessToken(userDetails, scopes, roles, null);
             String refreshToken = jwtService.generateRefreshToken(user);
 
             // Return response

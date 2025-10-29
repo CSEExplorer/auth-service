@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
 
 
 import com.bookify.auth_service.authn.exception.jwt.JwtTokenExpiredException;
@@ -56,8 +60,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(7);
 
         final String username;
+        List<SimpleGrantedAuthority> authorities = List.of();
         try {
-            username = jwtService.extractUsername(jwt); // may throw SignatureException
+            username = jwtService.extractUsername(jwt);
+            List<String> roles = jwtService.extractClaim(jwt, claims -> {
+                Object rolesObj = claims.get("roles");
+                if (rolesObj instanceof List<?>) {
+                    return ((List<?>) rolesObj).stream()
+                            .filter(Objects::nonNull)
+                            .map(Object::toString)
+                            .toList();
+                }
+                return List.of();
+            });
+//may throw SignatureException
+            authorities = roles.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .toList();
+
         } catch (io.jsonwebtoken.security.SignatureException e) {
             SecurityContextHolder.clearContext();
             authenticationEntryPoint.commence(request, response,
@@ -92,7 +112,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 3️⃣ Load user details and set authentication
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
                 authToken.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource()
                         .buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);

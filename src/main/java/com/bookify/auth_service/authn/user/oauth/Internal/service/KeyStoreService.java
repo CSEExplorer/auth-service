@@ -48,20 +48,10 @@ public class KeyStoreService {
         return newKey;
     }
 
-    public RSAKey getActiveKey() throws Exception {
-        return jwkRepository.findByActiveTrue()
-                .map(j -> {
-                    try {
-                        return RSAKey.parse(j.getPrivateKeyJson());
-                    } catch (ParseException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .orElseThrow(() -> new IllegalStateException("No active signing key found"));
-    }
+
 
     public JWKSet getPublicJwks() {
-        List<RSAKey> keys = jwkRepository.findAll()
+        List<JWK> keys = jwkRepository.findAll()
                 .stream()
                 .map(k -> {
                     try {
@@ -71,8 +61,10 @@ public class KeyStoreService {
                     }
                 })
                 .filter(Objects::nonNull)
+                .map(jwk -> (JWK) jwk) // 👈 Cast RSAKey to JWK explicitly
                 .toList();
-        return new JWKSet((JWK) keys);
+
+        return new JWKSet(keys); // ✅ Works now
     }
 }
 

@@ -13,20 +13,24 @@ import java.time.Duration;
 public class TokenSettingsConfig {
 
     @Value("${security.oauth2.access-token.ttl:3600}") // default 1 hour
-    private long accessTokenTtl;
+    private Long accessTokenTtl;
 
     @Value("${security.oauth2.refresh-token.ttl:604800}") // default 7 days
-    private long refreshTokenTtl;
+    private Long refreshTokenTtl;
 
     @Value("${security.oauth2.reuse-refresh-tokens:true}")
-    private boolean reuseRefreshTokens;
+    private Boolean reuseRefreshTokens;
 
     @Bean
     public TokenSettings tokenSettings() {
+        long accessTtl = (accessTokenTtl != null) ? accessTokenTtl : 3600L;
+        long refreshTtl = (refreshTokenTtl != null) ? refreshTokenTtl : 604800L;
+        boolean reuse = (reuseRefreshTokens != null) ? reuseRefreshTokens : true;
+
         return TokenSettings.builder()
-                .accessTokenTimeToLive(Duration.ofSeconds(accessTokenTtl))
-                .refreshTokenTimeToLive(Duration.ofSeconds(refreshTokenTtl))
-                .reuseRefreshTokens(reuseRefreshTokens)
+                .accessTokenTimeToLive(Duration.ofSeconds(accessTtl))
+                .refreshTokenTimeToLive(Duration.ofSeconds(refreshTtl))
+                .reuseRefreshTokens(reuse)
                 .build();
     }
 }

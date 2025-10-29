@@ -23,7 +23,12 @@ public class User {
     private String username;  // Unique username, max 50 chars
 
     @Column(nullable = false, unique = true, length = 100)
-    private String email;     // Unique email
+    private String email;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;  // Store hashed password

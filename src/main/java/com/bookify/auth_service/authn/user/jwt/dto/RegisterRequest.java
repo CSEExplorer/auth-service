@@ -28,4 +28,6 @@ public class RegisterRequest {
     @NotBlank(message = "Password cannot be empty")
     @ValidPassword
     private String password;
+
+    private String role;
 }
