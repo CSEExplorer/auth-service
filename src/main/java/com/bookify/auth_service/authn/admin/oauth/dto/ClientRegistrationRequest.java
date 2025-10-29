@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -51,4 +52,6 @@ public class ClientRegistrationRequest {
      * Human-readable client name for admin UI.
      */
     private String clientName;
+
+    private TokenSettingsDTO  tokenSettings;
 }

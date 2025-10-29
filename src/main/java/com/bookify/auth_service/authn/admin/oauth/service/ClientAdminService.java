@@ -22,6 +22,8 @@ public class ClientAdminService {
     }
 
     public OAuth2Client createClient(ClientRegistrationRequest request) {
+        // Here also add the token setting
+
         OAuth2Client client = new OAuth2Client();
         client.setClientId(request.getClientId());
         client.setClientSecret(request.getClientSecret());
@@ -31,6 +33,18 @@ public class ClientAdminService {
         client.setScopes(String.join(",", request.getScopes()));
         client.setClientAuthMethod(request.getClientAuthMethod());
         client.setActive(true);
+
+
+        if (request.getTokenSettings() != null) {
+            client.setAccessTokenTimeToLive(request.getTokenSettings().getAccessTokenTimeToLive());
+            client.setRefreshTokenTimeToLive(request.getTokenSettings().getRefreshTokenTimeToLive());
+            client.setReuseRefreshTokens(request.getTokenSettings().isReuseRefreshTokens());
+        } else {
+            // ✅ Otherwise,  apply defaults
+            client.setAccessTokenTimeToLive(3600L); // 1 hour
+            client.setRefreshTokenTimeToLive(2592000L); // 30 days
+            client.setReuseRefreshTokens(true);
+        }
         return clientRepository.save(client);
     }
 
