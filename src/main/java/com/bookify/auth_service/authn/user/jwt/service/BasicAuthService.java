@@ -2,6 +2,7 @@ package com.bookify.auth_service.authn.user.jwt.service;
 
 import com.bookify.auth_service.authn.exception.basic.CustomAuthException;
 import com.bookify.auth_service.authn.user.jwt.dto.BasicAuthResponse;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -76,4 +77,24 @@ public class BasicAuthService {
             throw new CustomAuthException("Invalid username/email or password");
         }
     }
+
+    @Transactional
+    public void resetPassword(UUID userId, String newPassword) {
+        System.out.println("Hey i have got the request to change password and I am changing it ");
+        User user = basicUserRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String encoded = PasswordEncoderUtil.encode(newPassword);
+        user.setPasswordHash(encoded);
+        basicUserRepository.save(user);
+    }
+
+
+    public UUID findUserIdByEmail(String email) {
+        return basicUserRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+
 }

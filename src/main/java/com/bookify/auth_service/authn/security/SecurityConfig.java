@@ -37,16 +37,6 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
-//    @Bean
-//    @Order(0)
-//    public SecurityFilterChain adminApiSecurity(HttpSecurity http) throws Exception {
-//        return http
-//                .securityMatcher("/admin/**")
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
-//                .httpBasic(Customizer.withDefaults()) // simple for now
-//                .build();
-//    }
 
 
     @Bean
@@ -56,6 +46,7 @@ public class SecurityConfig {
                 .securityMatcher("/api/auth/jwt/**","/admin/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/internal/**").permitAll()
                         .requestMatchers("/api/auth/jwt/register", "/api/auth/jwt/login", "/api/auth/jwt/refresh").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/super-admin/**").hasRole("SUPER_ADMIN")// 👈 restrict to admin
