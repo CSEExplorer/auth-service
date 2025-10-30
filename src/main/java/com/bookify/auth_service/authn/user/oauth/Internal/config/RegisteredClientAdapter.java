@@ -23,9 +23,7 @@ import java.util.stream.Collectors;
  */
 public final class RegisteredClientAdapter {
 
-    private RegisteredClientAdapter() {
-
-    }
+    private RegisteredClientAdapter() {}
 
     public static RegisteredClient toRegisteredClient(OAuth2Client entity, PasswordEncoder passwordEncoder) {
         if (entity == null) return null;
@@ -54,6 +52,7 @@ public final class RegisteredClientAdapter {
 
         // Grant types
         parseToCollection(entity.getGrantTypes()).stream()
+                // In my db it is stored as "," separated String
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .forEach(gt -> {
@@ -104,48 +103,9 @@ public final class RegisteredClientAdapter {
 
         return builder.build();
     }
-
-    public static OAuth2Client toEntity(RegisteredClient client) {
-        if (client == null) return null;
-
-        OAuth2Client entity = new OAuth2Client();
-        entity.setClientId(client.getClientId());
-        entity.setClientSecret(client.getClientSecret());
-        entity.setClientName(client.getClientName());
-
-        // redirect URIs -> store as JSON array
-        Set<String> redirectUris = client.getRedirectUris();
-        entity.setRedirectUris(asJsonArrayString(redirectUris));
-
-        // grant types -> comma separated
-        String grants = client.getAuthorizationGrantTypes().stream()
-                .map(AuthorizationGrantType::getValue)
-                .collect(Collectors.joining(","));
-        entity.setGrantTypes(grants);
-
-        // scopes -> comma separated
-        String scopes = String.join(",", client.getScopes());
-        entity.setScopes(scopes);
-
-        // client auth method -> take first
-        if (!client.getClientAuthenticationMethods().isEmpty()) {
-            String method = client.getClientAuthenticationMethods().iterator().next().getValue();
-            entity.setClientAuthMethod(method);
-        }
-
-        // token settings -> store a minimal JSON
-        entity.setTokenSettings(tokenSettingsToJson(client.getTokenSettings()));
-
-        // jwks left empty unless client had one
-        entity.setJwks(null);
-
-        entity.setActive(true);
-        return entity;
-    }
-
-    // ----- helpers -----
-
     private static Collection<String> parseToCollection(String raw) {
+         //handling Json array ot list<String> and parsinf simple "a,b" to list<String>
+
         if (raw == null) return Collections.emptyList();
         String trimmed = raw.trim();
         // Try parse as JSON array
@@ -166,23 +126,6 @@ public final class RegisteredClientAdapter {
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
     }
-
-    private static String asJsonArrayString(Collection<String> items) {
-        if (items == null || items.isEmpty()) return "[]";
-        StringBuilder sb = new StringBuilder("[");
-        String delim = "";
-        for (String v : items) {
-            sb.append(delim).append("\"").append(escapeJson(v)).append("\"");
-            delim = ",";
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private static String escapeJson(String s) {
-        return s.replace("\"", "\\\"");
-    }
-
     private static Optional<TokenSettings> parseTokenSettings(String json) {
         // Minimal parsing: if JSON contains access_token_ttl and refresh_token_ttl (ISO-8601 or simple minutes)
         if (json == null || json.isBlank()) return Optional.empty();
@@ -202,29 +145,6 @@ public final class RegisteredClientAdapter {
             return Optional.empty();
         }
     }
-
-    private static String tokenSettingsToJson(TokenSettings s) {
-        if (s == null) return "{}";
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("access_token_ttl", s.getAccessTokenTimeToLive().toString());
-        if (s.getRefreshTokenTimeToLive() != null) {
-            map.put("refresh_token_ttl", s.getRefreshTokenTimeToLive().toString());
-        }
-        return mapToJson(map);
-    }
-
-    private static String mapToJson(Map<String, Object> map) {
-        StringBuilder sb = new StringBuilder("{");
-        String delim = "";
-        for (Map.Entry<String, Object> e : map.entrySet()) {
-            sb.append(delim).append("\"").append(e.getKey()).append("\":");
-            sb.append("\"").append(escapeJson(String.valueOf(e.getValue()))).append("\"");
-            delim = ",";
-        }
-        sb.append("}");
-        return sb.toString();
-    }
-
     private static Duration parseDuration(String s) {
         // Accept ISO-8601 (PT15M) or simple formats like "15m", "7d"
         if (s == null) return Duration.ofMinutes(15);
@@ -260,4 +180,22 @@ public final class RegisteredClientAdapter {
         return ts.tokenSettings();
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

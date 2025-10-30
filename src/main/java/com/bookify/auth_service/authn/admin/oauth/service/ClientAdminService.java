@@ -39,6 +39,7 @@ public class ClientAdminService {
         // since it may break if null comes so chekc for the null entry if null then keep ""
 
         if (request.getGrantTypes().contains("authorization_code")) {
+
             if (request.getRedirectUris() == null || request.getRedirectUris().isEmpty()) {
                 throw new IllegalArgumentException("Redirect URIs are required for authorization_code grant type");
             }

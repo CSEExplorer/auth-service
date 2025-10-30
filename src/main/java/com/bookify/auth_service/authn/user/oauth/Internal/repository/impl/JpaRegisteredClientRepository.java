@@ -36,24 +36,7 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
 
     @Override
     public void save(RegisteredClient registeredClient) {
-        if (registeredClient == null) {
-            throw new IllegalArgumentException("registeredClient cannot be null");
-        }
-        // Convert to entity and persist
-        OAuth2Client entity = RegisteredClientAdapter.toEntity(registeredClient);
 
-        // Ensure client secret is encoded
-        if (registeredClient.getClientSecret() != null && passwordEncoder != null) {
-            // If secret seems raw (not BCrypt), encode
-            String raw = registeredClient.getClientSecret();
-            if (!(raw.startsWith("$2a$") || raw.startsWith("$2b$") || raw.startsWith("$2y$"))) {
-                entity.setClientSecret(passwordEncoder.encode(raw));
-            } else {
-                entity.setClientSecret(raw);
-            }
-        }
-
-        clientRepository.save(entity);
     }
 
     @Override
