@@ -66,5 +66,17 @@ public class KeyStoreService {
 
         return new JWKSet(keys); // ✅ Works now
     }
+
+    public RSAKey getActiveKey() throws Exception {
+        return jwkRepository.findByActiveTrue()
+                .map(j -> {
+                    try {
+                        return RSAKey.parse(j.getPrivateKeyJson());
+                    } catch (ParseException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .orElseThrow(() -> new IllegalStateException("No active signing key found"));
+    }
 }
 

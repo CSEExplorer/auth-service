@@ -4,6 +4,7 @@ package com.bookify.auth_service.authn.user.jwt.service;
 import com.bookify.auth_service.authn.user.jwt.entity.RefreshToken;
 import com.bookify.auth_service.authn.user.jwt.entity.User;
 import com.bookify.auth_service.authn.user.jwt.repository.RefreshTokenRepository;
+import com.bookify.auth_service.authn.user.oauth.Internal.service.KeyStoreService;
 import io.jsonwebtoken.*;
 
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,18 +26,20 @@ public class JwtService {
     private final RefreshTokenRepository refreshTokenRepository;
 
 
-    private final KeyPair keyPair;
 
+    private final KeyStoreService keyStoreService;
 
 
     public JwtService(
                       RefreshTokenRepository refreshTokenRepository,
 
-                      KeyPair keyPair) {
+                      KeyStoreService keyStoreService) {
 
         this.refreshTokenRepository = refreshTokenRepository;
 
-        this.keyPair = keyPair;
+
+        this.keyStoreService = keyStoreService;
+
     }
 
     // ================= Access Token =================
@@ -153,11 +156,21 @@ public class JwtService {
     // ================= Keys =================
 
     private PrivateKey getPrivateKey() {
-        return keyPair.getPrivate();
+        try {
+            var jwk = keyStoreService.getActiveKey();
+            return jwk.toRSAPrivateKey();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load private key", e);
+        }
     }
 
     private PublicKey getPublicKey() {
-        return keyPair.getPublic();
+        try {
+            var jwk = keyStoreService.getActiveKey();
+            return jwk.toRSAPublicKey();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load public key", e);
+        }
     }
 
     public void revokeAllRefreshTokens(User user) {
