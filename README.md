@@ -408,5 +408,75 @@ Registers a new user into the system.
     "userId": "1ed82607-7b38-4bd5-811a-483fdbe22d87"
 }
 ```
-
 #### 1. `POST /login`
+**Purpose:**  
+Authenticates user credentials and returns access and refresh tokens.
+
+**Request Body:**
+```json
+{
+    "usernameOrEmail": "saxenaaditya381@gmail.com",
+    "password":"4AD+6ad+9=0"
+}
+```
+**Behavior:**
+
+- Validates credentials using Spring Security AuthenticationManager.
+- Generates JWT access token (15 min expiry) and refresh token (7 days expiry).
+- Optionally validates MFA if enabled.
+
+**Response (200 OK):**
+```json
+{
+    "accessToken": "{{access_token}}",
+    "refreshToken": "4706b2c8-8476-48be-ab49-010e6c21e8ee"
+}
+```
+
+
+#### 1. `POST /refresh`
+**Purpose:**  
+Issues a new access token using a valid refresh token.
+
+**Request Body:**
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
+}
+```
+**Behavior:**
+
+- Validates the refresh token signature and expiry.
+- Issues a new access token (and optionally a new refresh token).
+
+**Response (200 OK):**
+```json
+{
+    "accessToken": "{{access_token}}",
+    "refreshToken": "4706b2c8-8476-48be-ab49-010e6c21e8ee"
+}
+```
+#### 1. `POST /logout`
+**Purpose:**  
+Logs out the current authenticated user by invalidating or blacklisting their active JWT access and refresh tokens.
+
+
+**Request Header:**
+```
+Authorization: Bearer <access_token>
+```
+**Behavior:**
+
+- Extracts and verifies the access token from the Authorization header.
+- If token revocation or blacklisting is enabled:
+- The token is stored in Redis (or another in-memory store) as “blacklisted” until expiry.
+- Optionally, also invalidates the refresh token (if provided).
+- Future requests using this token will be rejected with HTTP 401 Unauthorized.
+
+
+**Response (200 OK):**
+```json
+{
+    "message": "Logged out successfully, access token blacklisted and refresh tokens revoked"
+}
+```
