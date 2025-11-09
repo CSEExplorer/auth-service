@@ -1,6 +1,7 @@
 package com.bookify.auth_service.authn.user.jwt.service;
 
 
+import com.bookify.auth_service.authn.security.CustomUserDetails;
 import com.bookify.auth_service.authn.user.jwt.entity.RefreshToken;
 import com.bookify.auth_service.authn.user.jwt.entity.User;
 import com.bookify.auth_service.authn.user.jwt.repository.RefreshTokenRepository;
@@ -44,13 +45,14 @@ public class JwtService {
 
     // ================= Access Token =================
 
-    public String generateAccessToken(UserDetails userDetails, List<String> scopes, List<String> roles, String deviceId) {
+    public String generateAccessToken(CustomUserDetails userDetails, List<String> scopes, List<String> roles, String deviceId, String email) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("scp", scopes);
         claims.put("roles", roles);
+        claims.put("email",email);
         if (deviceId != null) claims.put("device_id", deviceId);
 
-        return createAccessToken(claims, userDetails.getUsername());
+        return createAccessToken(claims, userDetails.getUserId());
     }
 
     private String createAccessToken(Map<String, Object> claims, String subject) {

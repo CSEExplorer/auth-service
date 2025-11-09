@@ -7,6 +7,7 @@ import com.bookify.auth_service.authn.exception.jwt.EmailAlreadyExistsException;
 import com.bookify.auth_service.authn.exception.jwt.InvalidCredentialsException;
 import com.bookify.auth_service.authn.exception.jwt.JwtTokenInvalidException;
 import com.bookify.auth_service.authn.exception.jwt.UsernameAlreadyExistsException;
+import com.bookify.auth_service.authn.security.CustomUserDetails;
 import com.bookify.auth_service.authn.security.CustomUserDetailsService;
 import com.bookify.auth_service.authn.user.jwt.dto.JwtAuthResponse;
 import com.bookify.auth_service.authn.user.jwt.dto.LoginRequest;
@@ -14,22 +15,26 @@ import com.bookify.auth_service.authn.user.jwt.dto.RefreshTokenRequest;
 import com.bookify.auth_service.authn.user.jwt.dto.RegisterRequest;
 import com.bookify.auth_service.authn.user.jwt.entity.Role;
 import com.bookify.auth_service.authn.user.jwt.entity.User;
+import com.bookify.auth_service.authn.user.jwt.event.EmailEvent;
 import com.bookify.auth_service.authn.user.jwt.repository.BasicUserRepository;
 import com.bookify.auth_service.authn.user.jwt.repository.RefreshTokenRepository;
 import com.bookify.auth_service.authn.user.jwt.service.JwtService;
 import com.bookify.auth_service.authn.user.jwt.service.TokenBlacklistService;
+import com.bookify.auth_service.authn.user.jwt.service.producer.EmailEventProducer;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -43,14 +48,16 @@ public class JwtAuthController {
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistService tokenBlacklistService;
     private final RefreshTokenRepository refreshTokenRepository;
-
+    private Authentication authentication;
+    private final EmailEventProducer emailEventProducer;
     public JwtAuthController(AuthenticationManager authenticationManager,
                              JwtService jwtService,
                              CustomUserDetailsService userDetailsService,
                              BasicUserRepository userRepository,
                              PasswordEncoder passwordEncoder,
                              TokenBlacklistService tokenBlacklistService,
-                             RefreshTokenRepository refreshTokenRepository) {
+                             RefreshTokenRepository refreshTokenRepository,
+                             EmailEventProducer emailEventProducer) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
@@ -58,6 +65,7 @@ public class JwtAuthController {
         this.passwordEncoder = passwordEncoder;
         this.tokenBlacklistService = tokenBlacklistService;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.emailEventProducer = emailEventProducer;
     }
 
     // ===== Register =====
@@ -85,7 +93,25 @@ public class JwtAuthController {
                 .build();
 
         userRepository.save(user);
-        return ResponseEntity.ok(user);
+
+        EmailEvent event = EmailEvent.builder()
+                .eventType("USER_REGISTERED")
+                .userId(user.getId().toString())
+                .channel("EMAIL")
+                .recipient(user.getEmail())
+                .data(Map.of(
+                        "userName", user.getUsername()
+
+                ))
+                .build();
+
+        emailEventProducer.publishEmailEvent(event);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "User registered successfully",
+                "userId", user.getId()
+        ));
+
     }
 
     // ===== Login =====
@@ -93,15 +119,15 @@ public class JwtAuthController {
     public ResponseEntity<JwtAuthResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
             // Authenticate credentials
-            authenticationManager.authenticate(
+             authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsernameOrEmail(),
                             request.getPassword()
                     )
             );
+            CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+            System.out.println(customUserDetails.getUserId() +" "+customUserDetails.getUsername());
 
-            // Load user details and entity
-            UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsernameOrEmail());
             User user = userRepository.findByEmail(request.getUsernameOrEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
             List<String> scopes = List.of("read", "write"); // Replace with real scopes
@@ -110,13 +136,29 @@ public class JwtAuthController {
                     : List.of();
 
 //            String deviceId = request.getDeviceId(); // optional field in LoginRequest
+             String email = request.getUsernameOrEmail();
 
-            // Generate tokens
-            String accessToken = jwtService.generateAccessToken(userDetails, scopes, roles, null);
+            String accessToken = jwtService.generateAccessToken(customUserDetails, scopes, roles,null, email);
             String refreshToken = jwtService.generateRefreshToken(user);
 
             // Return response
             JwtAuthResponse response = new JwtAuthResponse(accessToken, refreshToken);
+            EmailEvent event = EmailEvent.builder()
+                    .eventType("USER_LOGIN")
+                    .userId(user.getId().toString())
+                    .channel("EMAIL")
+                    .recipient(user.getEmail())
+                    .data(Map.of(
+                            "userName", user.getUsername(),
+                            "loginTime",user.getCreatedAt(),
+                            "ipAddress","",
+                            "location",""
+
+
+                    ))
+                    .build();
+
+            emailEventProducer.publishEmailEvent(event);
             return ResponseEntity.ok(response);
 
         } catch (BadCredentialsException e) {
@@ -172,15 +214,14 @@ public class JwtAuthController {
                 .orElseThrow(() -> new JwtTokenInvalidException("User not found for refresh token"))
                 .getUser();
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        // Optional: scopes/roles
-        List<String> scopes = List.of("read", "write");
-//        List<String> roles = user.getRoles() != null
-//                ? user.getRoles().stream().map(r -> r.getName()).toList()
-//                : List.of();
-
-        String newAccessToken = jwtService.generateAccessToken(userDetails, scopes, null, null);
+        List<String> scopes = List.of("read", "write"); // Replace with real scopes
+        List<String> roles = user.getRole() != null
+                ? List.of(user.getRole().name())
+                : List.of();
+        String email = customUserDetails.getUsername();
+        String newAccessToken = jwtService.generateAccessToken(customUserDetails, scopes, roles, null,email);
 
         return ResponseEntity.ok(new JwtAuthResponse(newAccessToken, newRefreshToken));
     }
