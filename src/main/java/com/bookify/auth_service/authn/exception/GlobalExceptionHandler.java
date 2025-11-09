@@ -1,7 +1,6 @@
 package com.bookify.auth_service.authn.exception;
 
 
-import com.bookify.auth_service.authn.exception.basic.CustomAuthException;
 import com.bookify.auth_service.authn.exception.oauth.OAuthException;
 import com.bookify.auth_service.authn.user.jwt.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -86,12 +85,7 @@ public class GlobalExceptionHandler {
                         "status", 404
                 ));
     }
-    @ExceptionHandler(CustomAuthException.class)
-    public ResponseEntity<ErrorResponse> handleAuthException(CustomAuthException ex) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse(LocalDateTime.now(), ex.getMessage(), "Authentication failed"));
-    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         return ResponseEntity

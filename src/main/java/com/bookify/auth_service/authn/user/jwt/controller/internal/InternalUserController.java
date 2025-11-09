@@ -1,7 +1,7 @@
 package com.bookify.auth_service.authn.user.jwt.controller.internal;
 
 
-import com.bookify.auth_service.authn.user.jwt.service.BasicAuthService;
+import com.bookify.auth_service.authn.user.jwt.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,10 +11,13 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/internal/users")
-@RequiredArgsConstructor
+
 public class InternalUserController {
 
-    private final BasicAuthService userService;
+    private final UserService userService;
+    InternalUserController(UserService userService){
+        this.userService  = userService;
+    }
 
     @PostMapping("/{userId}/reset-password")
     public ResponseEntity<Void> resetPassword(@PathVariable UUID userId,

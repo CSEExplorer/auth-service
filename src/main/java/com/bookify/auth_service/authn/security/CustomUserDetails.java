@@ -2,21 +2,23 @@ package com.bookify.auth_service.authn.security;
 
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
+import java.util.List;
 
 
 import com.bookify.auth_service.authn.user.jwt.entity.User;
 
-import java.util.Collections;
 
-
+/**
+ * @param user ✅ you keep a reference to your entity
+ */
 public record CustomUserDetails(User user) implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Example: return user roles in future if needed
-        return Collections.emptyList();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
     @Override
@@ -26,13 +28,21 @@ public record CustomUserDetails(User user) implements UserDetails {
 
     @Override
     public String getUsername() {
-        // ✅ Use email as the primary username for Spring Security
-        return user.getEmail();
+        return user.getUsername(); // or user.getUsername()
     }
-
 
     @Override
     public boolean isEnabled() {
         return user.getIsActive();
     }
+
+    // ✅ Add any getters you want to access your original user fields later
+    public String getUserId() {
+        return user.getId().toString();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
+    }
+
 }

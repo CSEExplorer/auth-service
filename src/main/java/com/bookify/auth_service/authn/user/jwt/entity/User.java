@@ -30,6 +30,11 @@ public class User {
     private Role role;
 
 
+    @Column()
+    private String provider = "Local";
+
+
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;  // Store hashed password
 

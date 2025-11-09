@@ -7,7 +7,6 @@ import com.bookify.auth_service.authn.user.jwt.entity.User;
 import com.bookify.auth_service.authn.user.jwt.repository.RefreshTokenRepository;
 import com.bookify.auth_service.authn.user.oauth.Internal.service.KeyStoreService;
 import io.jsonwebtoken.*;
-
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -52,7 +51,7 @@ public class JwtService {
         claims.put("email",email);
         if (deviceId != null) claims.put("device_id", deviceId);
 
-        return createAccessToken(claims, userDetails.getUserId());
+        return createAccessToken(claims, userDetails.getUsername());
     }
 
     private String createAccessToken(Map<String, Object> claims, String subject) {
@@ -204,5 +203,7 @@ public class JwtService {
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
+
+
 
 }

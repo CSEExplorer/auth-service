@@ -1,53 +1,70 @@
 package com.bookify.auth_service.authn.security;
 
-import com.bookify.auth_service.authn.user.oauth.external.service.GoogleOAuthService;
+import com.bookify.auth_service.authn.user.jwt.entity.User;
+import com.bookify.auth_service.authn.user.oauth.external.facade.GoogleOAuthFacade;
+import com.bookify.auth_service.authn.security.CustomUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 @Component
 public class GoogleOAuthFilter extends OncePerRequestFilter {
 
-    private final GoogleOAuthService googleOAuthService;
+    private final GoogleOAuthFacade googleOAuthFacade;
 
-    public GoogleOAuthFilter(GoogleOAuthService googleOAuthService) {
-        this.googleOAuthService = googleOAuthService;
+    public GoogleOAuthFilter(GoogleOAuthFacade googleOAuthFacade) {
+        this.googleOAuthFacade = googleOAuthFacade;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain)
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        System.out.println(path);
 
-        // Only process Google callback
+        // ✅ Only process Google OAuth callback
         if ("/api/auth/oauth/callback/google".equals(path)) {
             String code = request.getParameter("code");
-            if (code != null) {
-                System.out.println(code);
-                // Process code using the service and get JWT
-                String jwt = googleOAuthService.processOAuthCode(code);
 
-                User userDetails = new User(googleOAuthService.getUserEmail(), "", Collections.emptyList());
+            if (code != null) {
+                // 1️⃣ Handle OAuth flow: exchange code → get Google user → create/find DB user → issue JWT
+                GoogleOAuthFacade.OAuthResult result = googleOAuthFacade.handleGoogleOAuthCallback(code);
+
+                // 2️⃣ Wrap your real DB user in CustomUserDetails
+                CustomUserDetails userDetails = new CustomUserDetails(result.user());
+
+                // 3️⃣ Create authentication token
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                // 4️⃣ Mark this request as authenticated
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                // Send JWT in response header
-                response.setHeader("Authorization", "Bearer " + jwt);
+                // 5️⃣ Send JWT token in response
+                response.setHeader("Authorization", "Bearer " + result.jwt());
+
+                // Optional: send response body too
+                response.setContentType("application/json");
+                response.getWriter().write("""
+                    {
+                      "message": "Google login successful",
+                      "token": "%s"
+                    }
+                    """.formatted(result.jwt()));
+                return; // stop chain since this endpoint directly returns response
             }
         }
 
+        // Continue normal filter chain for other requests
         chain.doFilter(request, response);
     }
 }
