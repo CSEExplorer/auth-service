@@ -369,114 +369,58 @@ You can adjust the scrape_interval, add new jobs, or modify the target hostname 
 📘 Tip: You can later integrate Grafana to visualize these metrics beautifully.
 The Auth Service already exposes rich Micrometer metrics (e.g., request count, latency percentiles, DB health).
 
+---
 
-## 🧾 Complete API Reference — Endpoint-by-Endpoint
+## 📘 API Documentation
 
-This section explains every controller and its endpoints — including purpose, request format, response structure, and behavior.
+The full API reference for the **Auth Service** is published and maintained via **Postman**.  
+It includes complete details for every endpoint — request structure, sample responses, authentication flow, and error handling.
+
+👉 **View the official Auth Service API Documentation here:**  
+🔗 [https://documenter.getpostman.com/view/38191314/2sB3WtrdfJ](https://documenter.getpostman.com/view/38191314/2sB3WtrdfJ)
 
 ---
-### 1️⃣ **AuthController.java**
-Handles **core authentication and token operations** like registration, login, refresh, and validation.
 
-`Base  /api/auth/jwt`
+### 📑 Overview
 
-#### 1. `POST /register`
-**Purpose:**  
-Registers a new user into the system.
+The Postman documentation includes:
 
-**Request Body:**
-```json
-{
-  "email": "user@example.com",
-  "password": "P@ssw0rd!",
-  
-}
-```
-**Behavior:**
+| Category | Description |
+|-----------|--------------|
+| 🧑‍💻 **Authentication APIs** | Endpoints for user registration, login, logout, token refresh, and validation |
+| 🔒 **MFA (Multi-Factor Authentication)** | Setup, verification, and disable endpoints for TOTP-based MFA |
+| 🔁 **Password Management** | Forgot and reset password flows via secure email links or OTP |
+| 🌐 **OAuth2 Integration** | Login and callback endpoints for Google and GitHub OAuth |
+| 🔑 **JWKS Endpoint** | Public JSON Web Key Set for JWT verification by other services |
+| 📊 **System & Observability** | Health check and Prometheus metrics endpoints |
+| 📬 **Kafka Events (Internal)** | Event triggers for notifications and email flows |
 
-- Validates that the email isn’t already registered.
-- Hashes the password using BCrypt.
-- Persists the user record into the database.
-- Optionally sends a “welcome” or “verify email” or "user login" to  Kafka event.
+---
 
-**Response (201 Created):**
-```json
-{
-    "email": "saxenaaditya03833@gmail.com",
-    "username": "saxenaaditya03833",
-    "message": "User registered successfully",
-    "userId": "1ed82607-7b38-4bd5-811a-483fdbe22d87"
-}
-```
-#### 1. `POST /login`
-**Purpose:**  
-Authenticates user credentials and returns access and refresh tokens.
+### 🧱 Testing the APIs
 
-**Request Body:**
-```json
-{
-    "usernameOrEmail": "saxenaaditya381@gmail.com",
-    "password":"4AD+6ad+9=0"
-}
-```
-**Behavior:**
+You can test all APIs directly in **Postman**:
 
-- Validates credentials using Spring Security AuthenticationManager.
-- Generates JWT access token (15 min expiry) and refresh token (7 days expiry).
-- Optionally validates MFA if enabled.
+1. Open the Postman public collection:  
+   [https://documenter.getpostman.com/view/38191314/2sB3WtrdfJ](https://documenter.getpostman.com/view/38191314/2sB3WtrdfJ)
+2. Click **“Run in Postman”** to import the collection.
+3. Set up environment variables:
+    - `{{baseUrl}}` → `http://localhost:8080`
+    - `{{accessToken}}` → your JWT token (from login response)
+    - `{{refreshToken}}` → refresh token (for refresh requests)
+4. Start testing directly from the Postman UI.
 
-**Response (200 OK):**
-```json
-{
-    "accessToken": "{{access_token}}",
-    "refreshToken": "4706b2c8-8476-48be-ab49-010e6c21e8ee"
-}
-```
+> 💡 The collection already includes examples, sample responses, and curl commands for each endpoint.
 
+---
 
-#### 1. `POST /refresh`
-**Purpose:**  
-Issues a new access token using a valid refresh token.
+### Notes
 
-**Request Body:**
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
-}
-```
-**Behavior:**
-
-- Validates the refresh token signature and expiry.
-- Issues a new access token (and optionally a new refresh token).
-
-**Response (200 OK):**
-```json
-{
-    "accessToken": "{{access_token}}",
-    "refreshToken": "4706b2c8-8476-48be-ab49-010e6c21e8ee"
-}
-```
-#### 1. `POST /logout`
-**Purpose:**  
-Logs out the current authenticated user by invalidating or blacklisting their active JWT access and refresh tokens.
-
-
-**Request Header:**
+- The API documentation is automatically updated whenever new endpoints are published to the collection.
+- For secured endpoints, make sure to include the header:
 ```
 Authorization: Bearer <access_token>
 ```
-**Behavior:**
-
-- Extracts and verifies the access token from the Authorization header.
-- If token revocation or blacklisting is enabled:
-- The token is stored in Redis (or another in-memory store) as “blacklisted” until expiry.
-- Optionally, also invalidates the refresh token (if provided).
-- Future requests using this token will be rejected with HTTP 401 Unauthorized.
 
 
-**Response (200 OK):**
-```json
-{
-    "message": "Logged out successfully, access token blacklisted and refresh tokens revoked"
-}
-```
+
