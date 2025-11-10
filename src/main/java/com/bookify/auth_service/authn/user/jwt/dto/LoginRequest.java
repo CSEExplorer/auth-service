@@ -2,8 +2,6 @@ package com.bookify.auth_service.authn.user.jwt.dto;
 
 import com.bookify.auth_service.authn.validation.ValidPassword;
 import lombok.Data;
-
-
 import jakarta.validation.constraints.NotBlank;
 
 @Data

@@ -1,29 +1,22 @@
 package com.bookify.auth_service.authn.user.jwt.controller;
-
-
 import com.bookify.auth_service.authn.user.jwt.dto.JwtAuthResponse;
 import com.bookify.auth_service.authn.user.jwt.dto.LoginRequest;
 import com.bookify.auth_service.authn.user.jwt.dto.RefreshTokenRequest;
 import com.bookify.auth_service.authn.user.jwt.dto.RegisterRequest;
-
 import com.bookify.auth_service.authn.user.jwt.service.UserService;
-
 import jakarta.validation.Valid;
-
-
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
-
-
 import java.util.Map;
+import com.bookify.auth_service.authn.user.jwt.dto.*;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 @RequestMapping("/api/auth/jwt")
 public class JwtAuthController {
 
-   private final UserService userService;
+    private final UserService userService;
 
     public JwtAuthController(UserService userService) {
         this.userService = userService;
