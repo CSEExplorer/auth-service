@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 public class EmailEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private static final String TOPIC = "user-events";
+    private static final String TOPIC = "topic-dev";
 
     public void publishEmailEvent(EmailEvent event) {
         try {

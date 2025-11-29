@@ -31,25 +31,7 @@ public record CustomUserDetails(User user) implements UserDetails {
         return user.getUsername(); // or user.getUsername()
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return false;
-    }
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return false;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return false;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return user.getIsActive();
-    }
 
     // ✅ Add any getters you want to access your original user fields later
     public String getUserId() {

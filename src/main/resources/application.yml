@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: Auth-Service
+
+###################################
+# ACTUATOR (COMMON)
+###################################
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,loggers,env,threaddump,httpexchanges
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+
+###################################
+# METRICS (COMMON)
+###################################
+management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.9,0.95,0.99
+
+###################################
+# LOGGING (COMMON)
+###################################
+logging:
+  level:
+    root: INFO
+    com.bookify.auth_service: DEBUG
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"
+
+  file:
+    name: logs/auth-service.log
+
+###################################
+# INFO ENDPOINT (COMMON)
+###################################
+info:
+  app:
+    name: Auth Service
+    version: 1.0.0
+    description: Handles authentication, token issuance and validation.
