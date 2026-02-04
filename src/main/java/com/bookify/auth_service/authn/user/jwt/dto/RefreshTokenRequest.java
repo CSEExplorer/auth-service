@@ -15,6 +15,6 @@ import jakarta.validation.constraints.NotBlank;
 @AllArgsConstructor
 public class RefreshTokenRequest {
 
-    @NotBlank(message = "Refresh token is required")
+
     private String refreshToken;
 }

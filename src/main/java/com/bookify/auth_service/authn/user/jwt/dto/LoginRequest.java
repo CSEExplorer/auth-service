@@ -11,6 +11,5 @@ public class LoginRequest {
     private String usernameOrEmail;
 
     @NotBlank(message = "Password is required")
-    @ValidPassword
     private String password;
 }

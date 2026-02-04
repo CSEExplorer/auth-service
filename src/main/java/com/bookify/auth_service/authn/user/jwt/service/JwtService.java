@@ -44,11 +44,13 @@ public class JwtService {
 
     // ================= Access Token =================
 
-    public String generateAccessToken(CustomUserDetails userDetails, List<String> scopes, List<String> roles, String deviceId, String email) {
+    public String generateAccessToken(CustomUserDetails userDetails, List<String> scopes, List<String> roles, String deviceId, String email , String authMethod) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("scp", scopes);
         claims.put("roles", roles);
         claims.put("email",email);
+        claims.put("authMethod", authMethod);
+
         if (deviceId != null) claims.put("device_id", deviceId);
 
         return createAccessToken(claims, userDetails.getUsername());
@@ -70,23 +72,24 @@ public class JwtService {
 
     // ================= Refresh Token =================
 
-    public String generateRefreshToken(User user) {
-        String token = UUID.randomUUID().toString();       // opaque token
-        String hash = REFRESH_TOKEN_ENCODER.encode(token);       // store hash only
+        public String generateRefreshToken(User user , String authMethod) {
+            String token = UUID.randomUUID().toString();       // opaque token
+            String hash = REFRESH_TOKEN_ENCODER.encode(token);       // store hash only
 
-        // 7 days
-        long refreshTokenExpirationMs = 7 * 24 * 60 * 60 * 1000;
-        RefreshToken refreshToken = RefreshToken.builder()
-                .user(user)
-                .tokenHash(hash)
-                .createdAt(Instant.now())
-                .expiresAt(Instant.now().plusMillis(refreshTokenExpirationMs))
-                .revoked(false)
-                .build();
+            // 7 days
+            long refreshTokenExpirationMs = 7 * 24 * 60 * 60 * 1000;
+            RefreshToken refreshToken = RefreshToken.builder()
+                    .user(user)
+                    .tokenHash(hash)
+                    .authMethod(authMethod)
+                    .createdAt(Instant.now())
+                    .expiresAt(Instant.now().plusMillis(refreshTokenExpirationMs))
+                    .revoked(false)
+                    .build();
 
-        refreshTokenRepository.save(refreshToken);
-        return token;
-    }
+            refreshTokenRepository.save(refreshToken);
+            return token;
+        }
 
     public String rotateRefreshToken(String oldToken) {
         Optional<RefreshToken> optionalToken = refreshTokenRepository.findAll().stream()
@@ -109,7 +112,7 @@ public class JwtService {
         refreshTokenRepository.save(tokenRecord);
 
         // Generate new refresh token
-        String newToken = generateRefreshToken(tokenRecord.getUser());
+        String newToken = generateRefreshToken(tokenRecord.getUser() , tokenRecord.getAuthMethod());
         tokenRecord.setReplacedByToken(newToken);
         refreshTokenRepository.save(tokenRecord);
 

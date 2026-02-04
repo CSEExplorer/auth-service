@@ -5,6 +5,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -29,13 +30,7 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-
-    @Column()
-    private String provider = "Local";
-
-
-
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash", nullable = true)
     private String passwordHash;  // Store hashed password
 
     @Column(name = "is_active", nullable = false)

@@ -20,7 +20,7 @@ public class OAuthUserService {
      * Finds an existing user by email, or creates a new one if not found.
      */
     @Transactional
-    public User findOrCreateOAuthUser(String email, String name, String provider) {
+    public User findOrCreateOAuthUser(String email, String name) {
         return userRepository.findByEmail(email)
                 .orElseGet(() -> {
                     User newUser = User.builder()
@@ -29,7 +29,6 @@ public class OAuthUserService {
                             .passwordHash("") // No password for OAuth
                             .isActive(true)
                             .role(Role.USER)
-                            .provider(provider)
                             .build();
                     return userRepository.save(newUser);
                 });

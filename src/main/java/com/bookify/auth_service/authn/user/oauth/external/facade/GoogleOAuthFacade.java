@@ -34,13 +34,13 @@ public class GoogleOAuthFacade {
         // 3️⃣ Find or create our internal user
         User user = oAuthUserService.findOrCreateOAuthUser(
                 googleUser.email(),
-                googleUser.name(),
-                "GOOGLE"
+                googleUser.name()
+
         );
 
         // 4️⃣ Generate JWT
         CustomUserDetails userDetails = new CustomUserDetails(user);
-        String jwt = jwtService.generateAccessToken(userDetails, null, null, null, user.getEmail());
+        String jwt = jwtService.generateAccessToken(userDetails, null, null, null, user.getEmail() , "GOOGLE");
         return new OAuthResult(user, jwt);
      }
     public record OAuthResult(User user, String jwt) {}

@@ -1,7 +1,9 @@
 package com.bookify.auth_service.authn.security;
 
 import com.bookify.auth_service.authn.exception.jwt.JwtTokenExpiredException;
+import com.bookify.auth_service.authn.exception.jwt.JwtTokenInvalidException;
 import com.bookify.auth_service.authn.exception.jwt.JwtTokenRevokedException;
+import com.bookify.auth_service.authn.exception.jwt.JwtTokenSignatureException;
 import com.bookify.auth_service.authn.user.jwt.service.JwtService;
 import com.bookify.auth_service.authn.user.jwt.service.TokenBlacklistService;
 import io.jsonwebtoken.security.SignatureException;
@@ -9,15 +11,17 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.authentication.AuthenticationServiceException;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.AuthenticationEntryPoint;
+
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,16 +33,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
-    private final AuthenticationEntryPoint authenticationEntryPoint;
+
+    private final HandlerExceptionResolver exceptionResolver;
 
     public JwtAuthenticationFilter(JwtService jwtService,
                                    CustomUserDetailsService userDetailsService,
                                    TokenBlacklistService tokenBlacklistService,
-                                   AuthenticationEntryPoint authenticationEntryPoint) {
+                                   @Qualifier("handlerExceptionResolver")
+                                   HandlerExceptionResolver exceptionResolver) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.tokenBlacklistService = tokenBlacklistService;
-        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.exceptionResolver = exceptionResolver;
     }
 
     @Override
@@ -47,14 +53,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        System.out.println(authHeader);
-        if (!hasBearerToken(authHeader)) {
+        String jwt = null;
+
+// 1️⃣ Try cookie-based auth first
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                if ("accessToken".equals(cookie.getName())) {
+                    jwt = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+// 2️⃣ Fallback to Authorization header (optional)
+        if (jwt == null) {
+            final String authHeader = request.getHeader("Authorization");
+            if (hasBearerToken(authHeader)) {
+                jwt = extractToken(authHeader);
+            }
+        }
+
+// 3️⃣ If no token found, continue filter chain
+        if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String jwt = extractToken(authHeader);
+//        final String jwt = extractToken(authHeader);
 
         try {
             processAuthentication(jwt, request);
@@ -94,12 +119,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 1️⃣ Verify blacklist
         if (tokenBlacklistService.isBlacklisted(jti)) {
-            throw new JwtTokenRevokedException("Token has been revoked");
+            throw new JwtTokenRevokedException();
         }
 
         // 2️⃣ Verify expiration / signature
         if (!jwtService.isTokenValid(jwt, username)) {
-            throw new JwtTokenExpiredException("Token has expired or is invalid");
+            throw new JwtTokenExpiredException();
         }
 
         // 3️⃣ Build authorities
@@ -130,10 +155,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .toList();
 
         } catch (SignatureException e) {
-            throw new AuthenticationServiceException("JWT Signature invalid: possible new keypair", e);
+            throw new JwtTokenSignatureException();
         } catch (Exception e) {
-            throw new AuthenticationServiceException("Error parsing roles from JWT", e);
+            throw new JwtTokenInvalidException();
         }
+
     }
 
     /**
@@ -159,10 +185,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                              Exception exception) throws IOException, ServletException {
 
         SecurityContextHolder.clearContext();
-        authenticationEntryPoint.commence(
-                request,
-                response,
-                new AuthenticationServiceException("JWT processing error", exception)
-        );
+        exceptionResolver.resolveException(request, response, null, exception);
+
     }
 }

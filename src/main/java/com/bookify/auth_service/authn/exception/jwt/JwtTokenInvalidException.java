@@ -1,5 +1,14 @@
 package com.bookify.auth_service.authn.exception.jwt;
 
-public class JwtTokenInvalidException extends RuntimeException {
-    public JwtTokenInvalidException(String message) { super(message); }
+import org.springframework.http.HttpStatus;
+
+public class JwtTokenInvalidException extends JwtAuthException {
+
+    public JwtTokenInvalidException() {
+        super(
+                "AUTH_ACCESS_TOKEN_INVALID",
+                "Access token is invalid",
+                HttpStatus.UNAUTHORIZED
+        );
+    }
 }

@@ -1,11 +1,17 @@
 spring:
   application:
     name: Auth-Service
+  profiles:
+    active: dev
 
-###################################
-# ACTUATOR (COMMON)
-###################################
+
+
+
+
 management:
+  ###################################
+  # ACTUATOR (COMMON)
+  ###################################
   endpoints:
     web:
       exposure:
@@ -15,10 +21,9 @@ management:
     health:
       show-details: always
 
-###################################
-# METRICS (COMMON)
-###################################
-management:
+      ###################################
+      # METRICS (COMMON)
+      ###################################
   metrics:
     tags:
       application: ${spring.application.name}

@@ -1,7 +1,9 @@
 package com.bookify.auth_service.authn.user.jwt.service;
 
-import com.bookify.auth_service.authn.exception.jwt.EmailAlreadyExistsException;
-import com.bookify.auth_service.authn.exception.jwt.InvalidCredentialsException;
+import com.bookify.auth_service.authn.exception.auth.AccountDisabledException;
+import com.bookify.auth_service.authn.exception.auth.EmailAlreadyExistsException;
+import com.bookify.auth_service.authn.exception.auth.InvalidCredentialsException;
+import com.bookify.auth_service.authn.exception.auth.UserNotFoundException;
 import com.bookify.auth_service.authn.exception.jwt.JwtTokenInvalidException;
 import com.bookify.auth_service.authn.security.CustomUserDetails;
 import com.bookify.auth_service.authn.security.CustomUserDetailsService;
@@ -18,12 +20,15 @@ import com.bookify.auth_service.authn.user.jwt.service.producer.EmailEventProduc
 import com.bookify.auth_service.authn.utility.PasswordEncoderUtil;
 import com.bookify.auth_service.authn.utility.UsernameGenerator;
 import jakarta.transaction.Transactional;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.util.List;
@@ -94,7 +99,9 @@ public class UserService {
 
             CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
-            User user = optionalUser.orElseThrow(() -> new InvalidCredentialsException("User not found"));
+            User user = optionalUser.orElseThrow(UserNotFoundException::new);
+
+
 
             // 3️⃣ Prepare roles/scopes
             List<String> scopes = List.of("read", "write");
@@ -105,8 +112,8 @@ public class UserService {
             String email = user.getEmail();
 
             // 4️⃣ Generate tokens
-            String accessToken = jwtService.generateAccessToken(customUserDetails, scopes, roles, null, email);
-            String refreshToken = jwtService.generateRefreshToken(user);
+            String accessToken = jwtService.generateAccessToken(customUserDetails, scopes, roles, null, email , "PASSWORD");
+            String refreshToken = jwtService.generateRefreshToken(user , "PASSWORD");
 
             // 5️⃣ Publish login event (for audit / notification)
             EmailEvent event = EmailEvent.builder()
@@ -124,11 +131,14 @@ public class UserService {
 
             emailEventProducer.publishEmailEvent(event);
 
+
+
+
             // 6️⃣ Return tokens
             return new JwtAuthResponse(accessToken, refreshToken);
 
         } catch (BadCredentialsException e) {
-            throw new InvalidCredentialsException("Invalid email or password");
+            throw new InvalidCredentialsException();
         }
     }
 
@@ -137,7 +147,7 @@ public class UserService {
 
         // 1️⃣ Email check
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException("Email already exists");
+            throw new EmailAlreadyExistsException();
         }
 
         // 2️⃣ Hash password
@@ -185,30 +195,25 @@ public class UserService {
         );
     }
 
-    public void logoutUser(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new JwtTokenInvalidException("Please send a valid Bearer token");
+    public void logoutUser(String refreshToken) {
+        if (!StringUtils.hasText(refreshToken)) {
+            throw new JwtTokenInvalidException();
         }
 
-        String token = authHeader.substring(7);
-        System.out.println(token);
-        // Extract username and jti
-        String username = jwtService.extractUsername(token);
-        String jti = jwtService.extractJti(token);
-
-        // Find user
+        // 2️⃣ Extract username from refresh token
+        String username = jwtService.extractUsername(refreshToken);
+        String jti = jwtService.extractJti(refreshToken);
         User user = userRepository.findByUsernameOrEmail(username)
-                .orElseThrow(() -> new JwtTokenInvalidException("User not found"));
+                .orElseThrow(JwtTokenInvalidException::new);
 
-        // Calculate remaining TTL and blacklist token
-        Duration ttl = Duration.between(
-                java.time.Instant.now(),
-                jwtService.extractExpiration(token).toInstant()
-        );
+        Duration ttl = Duration.between( java.time.Instant.now(), jwtService.extractExpiration(refreshToken).toInstant() );
         tokenBlacklistService.blacklistToken(jti, ttl);
 
-        // Revoke refresh tokens
+//        tokenBlacklistService.blacklistToken(jti, ttl);
+        // 3️⃣ Revoke ALL refresh tokens for user (recommended)
         jwtService.revokeAllRefreshTokens(user);
+
+
 
         // Optionally emit a logout event
 //        EmailEvent event = EmailEvent.builder()
@@ -237,7 +242,7 @@ public class UserService {
         User user = refreshTokenRepository.findAll().stream()
                 .filter(t -> passwordEncoder.matches(newRefreshToken, t.getTokenHash()))
                 .findFirst()
-                .orElseThrow(() -> new JwtTokenInvalidException("User not found for refresh token"))
+                .orElseThrow(JwtTokenInvalidException::new)
                 .getUser();
 
         CustomUserDetails customUserDetails = new CustomUserDetails(user);
@@ -249,7 +254,7 @@ public class UserService {
                 : List.of();
 
         String email = user.getEmail();
-        String newAccessToken = jwtService.generateAccessToken(customUserDetails, scopes, roles, null, email);
+        String newAccessToken = jwtService.generateAccessToken(customUserDetails, scopes, roles, null, email,"PASSWORD");
 
 //        // 5️⃣ Optionally emit event
 //        EmailEvent event = EmailEvent.builder()

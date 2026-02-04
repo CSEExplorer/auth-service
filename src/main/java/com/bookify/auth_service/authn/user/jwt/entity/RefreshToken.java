@@ -36,6 +36,9 @@ public class RefreshToken {
     @Column(nullable = false)
     private boolean revoked;
 
+    @Column(nullable = false)
+    private String authMethod;
+
     private String replacedByToken; // token id that replaced this one
 }
 
